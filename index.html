@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>中2亿模拟游戏</title>
+    <style>
+        body {
+            font-family: 'Arial', '微软雅黑', sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #4a90e2;
+        }
+
+        select, button {
+            padding: 8px 12px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #fff;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        button {
+            color: white;
+            background-color: #5cb85c;
+            border-color: #4cae4c;
+            cursor: pointer;
+            font-size: 22px;
+            font-weight: bold;
+            padding: 10px 50px;
+        }
+
+        button:hover {
+            background-color: #449d44;
+            border-color: #398439;
+        }
+
+        .every-day-draw {
+            text-align: left;
+            background-color: #fafafa;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .every-day-draw span {
+            display: block;
+        }
+
+        strong {
+            color: #d9534f;
+            font-size: 30px;
+            margin: 10px;
+        }
+
+        .stats-message {
+            background-color: #e7f7ff;
+            border-left: 5px solid #4a90e2;
+            padding: 10px 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: left;
+        }
+
+        .stats-message strong {
+            display: block;
+            color: #333;
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>中2亿模拟游戏</h1>
+    <div>
+        <label>我的初始本金:</label>
+        <select id="initialCapital">
+            <option value="1000">1千</option>
+            <option value="10000">1万</option>
+            <option value="100000">10万</option>
+            <option value="1000000">100万</option>
+            <option value="5000000">500万</option>
+            <option value="10000000">1千万</option>
+            <option value="50000000">5千万</option>
+            <option value="100000000" selected>1亿</option>
+            <option value="200000000" selected>2亿</option>
+        </select>
+
+        <label>目标中奖金额:</label>
+        <select id="targetWinnings">
+            <option value="1000">1千</option>
+            <option value="10000">1万</option>
+            <option value="100000">10万</option>
+            <option value="1000000">100万</option>
+            <option value="5000000">500万</option>
+            <option value="10000000">1千万</option>
+            <option value="50000000">5千万</option>
+            <option value="100000000" selected>1亿</option>
+            <option value="200000000" selected>2亿</option>
+        </select>
+
+        <label>每期下注数:</label>
+        <select id="betPerDraw">
+            <option value="1">1注</option>
+            <option value="5">5注</option>
+            <option value="10">10注</option>
+            <option value="100">100注</option>
+            <option value="1000">1千注</option>
+            <option value="50000" selected>5万注</option>
+            <!-- 其他选项 -->
+        </select>
+        <label>固定号码:</label>
+        <select id="isFixedBetNumbers">
+            <option value="true">是</option>
+            <option value="false" selected>否</option>
+        </select>
+    </div>
+    <button id="startButton">开始游戏</button>
+    <button id="resetButton" style="background-color: gainsboro; border-color:gainsboro; ">重置统计</button>
+    <div id="output"></div>
+</div>
+
+
+
+<script>
+    document.getElementById('startButton').addEventListener('click', startGame);
+    document.getElementById('resetButton').addEventListener('click', resetGame);
+
+    function loadGameStats() {
+        const gameStats = JSON.parse(localStorage.getItem('gameStats')) || {
+            playedTimes: 0,
+            targetAchievedTimes: 0,
+            targetNotAchievedTimes: 0,
+            currentConfig: {
+                initialCapital: null,
+                targetWinnings: null,
+                betPerDraw: null,
+                isFixedBetNumbers: null
+            }
+        };
+
+        return gameStats;
+    }
+
+    function updateGameStats(isTargetAchieved, gameStats) {
+        gameStats.playedTimes += 1;
+        if (isTargetAchieved) {
+            gameStats.targetAchievedTimes += 1;
+        } else {
+            gameStats.targetNotAchievedTimes += 1;
+        }
+
+        localStorage.setItem('gameStats', JSON.stringify(gameStats));
+    }
+
+    function isConfigChanged(currentConfig, gameStats) {
+        return currentConfig.initialCapital !== gameStats.currentConfig.initialCapital ||
+            currentConfig.targetWinnings !== gameStats.currentConfig.targetWinnings ||
+            currentConfig.betPerDraw !== gameStats.currentConfig.betPerDraw ||
+            currentConfig.isFixedBetNumbers !== gameStats.currentConfig.isFixedBetNumbers;
+    }
+
+    function resetGameStats(gameStats) {
+        gameStats.playedTimes = 0;
+        gameStats.targetAchievedTimes = 0;
+        gameStats.targetNotAchievedTimes = 0;
+    }
+
+    function resetGame() {
+        localStorage.removeItem('gameStats');
+        location.reload();
+    }
+
+    function startGame() {
+        let initialCapital = parseInt(document.getElementById('initialCapital').value);
+        const targetWinnings = parseInt(document.getElementById('targetWinnings').value);
+        const betPerDraw = parseInt(document.getElementById('betPerDraw').value);
+        const isFixedBetNumbers = document.getElementById('isFixedBetNumbers').value === 'true';
+
+        const currentConfig = {
+            initialCapital: initialCapital,
+            targetWinnings: targetWinnings,
+            betPerDraw: betPerDraw,
+            isFixedBetNumbers: isFixedBetNumbers
+        };
+
+        let gameStats = loadGameStats();
+
+        if (isConfigChanged(currentConfig, gameStats)) {
+            resetGameStats(gameStats);
+        }
+
+        gameStats.currentConfig = currentConfig;
+
+        // 游戏逻辑保持不变...
+
+        const outputDiv = document.getElementById('output');
+        outputDiv.innerHTML = ''; // 清空之前的数据
+        let age = 1;
+        const maxAge = 99;
+        let totalWinnings = 0;
+        let totalBet = 0;
+        let drawCount = 0;
+        let fixedBetNumbers = isFixedBetNumbers ? generateFixedBetNumbers(7) : [];
+
+        while (age <= maxAge && totalWinnings < targetWinnings && initialCapital > 0) {
+            for (let day = 1; day <= 365; day++) {
+                // setTimeout(() => {
+                let betNumbers = isFixedBetNumbers ? fixedBetNumbers : generateRandomBetNumbers(7);
+                let drawNumbers = generateDrawNumbers();
+                let matchCount = calculateMatchCount(betNumbers, drawNumbers);
+                let winnings = calculateWinnings(matchCount) * betPerDraw;
+                totalWinnings += winnings;
+                totalBet += betPerDraw * 2; // 假设每注2元
+                initialCapital -= betPerDraw * 2;
+                initialCapital += winnings;
+                drawCount++;
+                displayResults(age, day, drawCount, betNumbers, drawNumbers, matchCount, winnings, totalWinnings, totalBet, initialCapital);
+
+                if ((totalWinnings >= targetWinnings) || (initialCapital <= 0)) {
+                    let message = (initialCapital <= 0) ? parseInt(document.getElementById('initialCapital').value)+'本金都亏完了。' : '哇哦,你设置的中奖目标已达成！';
+                    displayMessage(message);
+                    break;
+                }
+                // }, 20 * day);
+            }
+            if ((totalWinnings >= targetWinnings) || (initialCapital <= 0)) {
+                break;
+            }
+            age++;
+        }
+
+        // 在游戏结束时更新统计
+        let isTargetAchieved = initialCapital > 0 && totalWinnings >= targetWinnings;
+        updateGameStats(isTargetAchieved, gameStats);
+
+        // 显示游戏统计信息
+        displayGameStats(gameStats);
+    }
+
+    function displayGameStats(gameStats) {
+        const message = `
+        <div class="stats-message">
+            <strong>游戏统计信息</strong>
+            当前配置：<br>
+            本金: ${gameStats.currentConfig.initialCapital}<br>
+            目标: ${gameStats.currentConfig.targetWinnings}<br>
+            玩了: ${gameStats.playedTimes} 次游戏<br>
+            达成目标: ${gameStats.targetAchievedTimes} 次<br>
+            没有达成目标: ${gameStats.targetNotAchievedTimes} 次
+        </div>`;
+        displayMessage(message);
+    }
+
+
+
+    function generateFixedBetNumbers(count) {
+        // 生成固定的7个下注号码
+        return Array.from({length: count}, (_, i) => i + 1);
+    }
+    function generateRandomBetNumbers(count) {
+        return generateRandomNumbers(7, 80);
+    }
+
+    function generateDrawNumbers() {
+        // 生成每期的20个开奖号码
+        return generateRandomNumbers(20, 80);
+    }
+
+    function generateRandomNumbers(count, max) {
+        let numbers = new Set();
+        while (numbers.size < count) {
+            numbers.add(Math.floor(Math.random() * max) + 1);
+        }
+        return Array.from(numbers);
+    }
+
+    function calculateMatchCount(betNumbers, drawNumbers) {
+        return betNumbers.filter(number => drawNumbers.includes(number)).length;
+    }
+
+    function calculateWinnings(matchCount) {
+        // 计算中奖金额
+        switch (matchCount) {
+            case 7: return 10000;
+            case 6: return 288;
+            case 5: return 28;
+            case 4: return 4;
+            default: return 0;
+        }
+    }
+
+    function displayResults(age, day, drawCount, betNumbers, drawNumbers, matchCount, winnings, totalWinnings, totalBet, initialCapital) {
+        const outputDiv = document.getElementById('output');
+        const drawDiv = document.createElement('div');
+        drawDiv.className = 'every-day-draw';
+        drawDiv.innerHTML = `<span>年份: ${age}, 当年期数: ${day}, 累计已下单期数: ${drawCount}</span><br>
+                         <span>投注号码: ${betNumbers.join(', ')}</span><br>
+                         <span>开奖号码: ${drawNumbers.join(', ')}</span><br>
+                         <span>匹配号码数量: ${matchCount}</span><br>
+                         <span>本期中奖金额: ${winnings}</span><br>
+                         <span>累计中奖金额: ${totalWinnings}</span><br>
+                         <span>累计投注金额: ${totalBet}</span><br>
+                         <span>剩余资产(含已中奖): ${initialCapital}</span>`;
+        outputDiv.prepend(drawDiv); // 将新数据显示在最上方
+    }
+
+
+    function displayMessage(message) {
+        const outputDiv = document.getElementById('output');
+        const messageDiv = document.createElement('div');
+        messageDiv.innerHTML = `<strong>${message}</strong><br>`;
+        outputDiv.prepend(messageDiv);
+    }
+
+</script>
+</body>
+</html>
